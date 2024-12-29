@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Routine Filter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+
+        form {
+            margin: 20px 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .remove-btn {
+            width: auto;
+            background-color: #f44336;
+            color: white;
+            font-size: 14px;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .remove-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-left: 5px solid #4CAF50;
+            border-radius: 5px;
+        }
+
+        .result p {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #b71c1c;
+            padding: 10px;
+            border-left: 5px solid #b71c1c;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .course-item {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .course-item input.course-name {
+            display: inline-block;
+            width: 70%;
+            margin-right: 5%;
+        }
+
+        .course-item input.course-section {
+            display: inline-block;
+            width: 20%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Exam Routine Filter</h1>
+        <form id="examForm">
+            <div class="form-group">
+                <label for="department">Department:</label>
+                <input type="text" id="department" placeholder="Enter your department" required>
+            </div>
+            <div class="form-group">
+                <label for="id">Student ID:</label>
+                <input type="text" id="id" placeholder="Enter your ID" required>
+            </div>
+            <div id="courseContainer">
+                <h3>Courses</h3>
+            </div>
+            <button type="button" id="addCourseBtn">Add Course</button>
+            <button type="button" id="submitBtn">Find Exam Details</button>
+        </form>
+        <div id="resultsContainer" style="display: none;"></div>
+        <div id="error" class="error" style="display: none;">No matching exam found for some courses!</div>
+    </div>
+
+    <script>
+        const courseContainer = document.getElementById("courseContainer");
+        const resultsContainer = document.getElementById("resultsContainer");
+
+        // Add Course functionality
+        document.getElementById("addCourseBtn").addEventListener("click", () => {
+            const courseDiv = document.createElement("div");
+            courseDiv.classList.add("course-item");
+
+            courseDiv.innerHTML = `
+        <input type="text" class="course-name" placeholder="Course Title" required>
+        <input type="text" class="course-section" placeholder="Section" required>
+        <button type="button" class="remove-btn">Remove</button>
+      `;
+
+            courseContainer.appendChild(courseDiv);
+
+            // Add Remove button functionality
+            courseDiv.querySelector(".remove-btn").addEventListener("click", () => {
+                courseContainer.removeChild(courseDiv);
+            });
+        });
+
+        // Fetch JSON data and find exam details
+        document.getElementById("submitBtn").addEventListener("click", () => {
+            const department = document.getElementById("department").value.trim();
+            const id = document.getElementById("id").value.trim();
+            const courseElements = document.querySelectorAll(".course-item");
+
+            const courses = Array.from(courseElements).map(courseItem => ({
+                title: courseItem.querySelector(".course-name").value.trim(),
+                section: courseItem.querySelector(".course-section").value.trim(),
+            }));
+
+            fetch('routine.json')
+                .then(response => response.json())
+                .then(examData => {
+                    resultsContainer.innerHTML = ""; // Clear previous results
+                    let anyMatch = false;
+
+                    for (const { title, section } of courses) {
+                        const foundExam = examData.find(exam => {
+                            const [startID, endID] = exam["ID"].split("-");
+                            return (
+                                exam["Dept."] === department &&
+                                exam["Course Title"].toLowerCase() === title.toLowerCase() &&
+                                exam["Section"].toLowerCase() === section.toLowerCase() &&
+                                isIDInRange(id, startID, endID)
+                            );
+                        });
+
+                        if (foundExam) {
+                            anyMatch = true;
+                            const resultDiv = document.createElement("div");
+                            resultDiv.classList.add("result");
+                            resultDiv.innerHTML = `
+                <p><strong>Course:</strong> ${title}</p>
+                <p><strong>Section:</strong> ${section}</p>
+                <p><strong>Exam Date:</strong> ${foundExam["Exam Date"]}</p>
+                <p><strong>Exam Time:</strong> ${foundExam["Exam Time"]}</p>
+                <p><strong>Room:</strong> ${foundExam["Room"]}</p>
+              `;
+                            resultsContainer.appendChild(resultDiv);
+                        }
+                    }
+
+                    resultsContainer.style.display = anyMatch ? "block" : "none";
+                    document.getElementById("error").style.display = anyMatch ? "none" : "block";
+                })
+                .catch(() => {
+                    const error = document.getElementById("error");
+                    error.style.display = "block";
+                    error.textContent = "Error loading data!";
+                });
+        });
+
+        function isIDInRange(id, startID, endID) {
+            const idNum = parseInt(id);
+            const startIDNum = parseInt(startID);
+            const endIDNum = parseInt(endID);
+            return idNum >= startIDNum && idNum <= endIDNum;
+        }
+    </script>
+</body>
+
+</html>

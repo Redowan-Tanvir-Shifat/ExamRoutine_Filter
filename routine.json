@@ -1,0 +1,25 @@
+[
+  {
+    "Dept.": "BSCSE",
+    "Course Code": "CSE 4509/CSI 309",
+    "Course Title": "Operating Systems",
+    "Section": "A",
+    "Teacher": "ARnA",
+    "Exam Date": "December 14, 2024",
+    "Exam Time": "09:00 AM - 11:00 AM",
+    "Room": "701",
+    "ID": "011182110-011203014"
+  },
+  {
+    "Dept.": "BSCSE",
+    "Course Code": "CSE 3408",
+    "Course Title": "Database Management Systems",
+    "Section": "B",
+    "Teacher": "John Doe",
+    "Exam Date": "December 15, 2024",
+    "Exam Time": "10:00 AM - 12:00 PM",
+    "Room": "702",
+    "ID": "011182110-011203014"
+  }
+]
+
